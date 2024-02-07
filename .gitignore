@@ -1,0 +1,14 @@
+.idea
+
+node_modules
+*.js
+*.d.ts
+
+build
+
+lambda/dist
+frontend/.env
+frontend/bucketName.txt
+
+cdk.out
+cdk/cdk-outputs.json

@@ -1,0 +1,22 @@
+{
+  "name": "promptus-lambda-base-layer",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest"
+  },
+  "dependencies": {
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.124",
+    "aws-lambda": "1.0.7",
+    "@aws-sdk/client-dynamodb": "^3.433.0",
+    "@aws-sdk/lib-dynamodb": "^3.433.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.451.0",
+    "@aws-sdk/client-bedrock": "^3.451.0",
+    "@types/node": "^20.8.4",
+    "@types/uuid": "^9.0.1"
+  }
+}
