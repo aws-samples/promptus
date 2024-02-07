@@ -54,7 +54,7 @@ function PromptusProject() {
 
     function loadData() {
         setLoading(true)
-        fetch(process.env.REACT_APP_API_URL + "/api/prompt?projectId=" + promptusProjectId, {
+        fetch(import.meta.env.VITE_API_URL + "/api/prompt?projectId=" + promptusProjectId, {
             method: "GET",
             headers: {
                 Authorization: session!.getIdToken().getJwtToken()
@@ -75,7 +75,7 @@ function PromptusProject() {
             description: promptDescription,
             publicPrompt: promptPublic
         } as PromptDto
-        fetch(process.env.REACT_APP_API_URL + "/api/prompt?projectId=" + promptusProjectId, {
+        fetch(import.meta.env.VITE_API_URL + "/api/prompt?projectId=" + promptusProjectId, {
             method: "POST",
             headers: {
                 Authorization: session!.getIdToken().getJwtToken()
@@ -106,7 +106,7 @@ function PromptusProject() {
     async function deletePrompt(prompt: PromptEntity) {
         setWorkingMessage("Deleting prompt")
         try {
-            const response = await fetch(process.env.REACT_APP_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + prompt.prompt.id, {
+            const response = await fetch(import.meta.env.VITE_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + prompt.prompt.id, {
                 method: "DELETE",
                 headers: {
                     Authorization: session!.getIdToken().getJwtToken()

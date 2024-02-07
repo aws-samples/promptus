@@ -86,7 +86,7 @@ function PromptusPrompt() {
 
     function loadData(loading: boolean) {
         setLoading(loading)
-        fetch(process.env.REACT_APP_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId, {
+        fetch(import.meta.env.VITE_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId, {
             method: "GET",
             headers: {
                 Authorization: session!.getIdToken().getJwtToken()
@@ -135,7 +135,7 @@ function PromptusPrompt() {
             promptDetail: promptDetail
         } as PromptDetailEntity
         try {
-            const response = await fetch(process.env.REACT_APP_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId + "?saveNewVersion=true", {
+            const response = await fetch(import.meta.env.VITE_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId + "?saveNewVersion=true", {
                 method: "POST",
                 headers: {
                     Authorization: session!.getIdToken().getJwtToken()
@@ -176,7 +176,7 @@ function PromptusPrompt() {
             }
         } as PromptCommentEntity
         try {
-            const response = await fetch(process.env.REACT_APP_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId + "/comment", {
+            const response = await fetch(import.meta.env.VITE_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId + "/comment", {
                 method: "POST",
                 headers: {
                     Authorization: session!.getIdToken().getJwtToken()
@@ -222,7 +222,7 @@ function PromptusPrompt() {
             entityContextId: promptDetailDto?.promptEntity.entityContextId,
         } as PromptusQEntity
         try {
-            const response = await fetch(process.env.REACT_APP_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId + "/promptusQ", {
+            const response = await fetch(import.meta.env.VITE_API_URL + "/api/project/" + promptusProjectId + "/prompt/" + promptusPromptId + "/promptusQ", {
                 method: "POST",
                 headers: {
                     Authorization: session!.getIdToken().getJwtToken()

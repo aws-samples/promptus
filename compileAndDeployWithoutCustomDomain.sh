@@ -40,3 +40,5 @@ npm install || exit
 node buildEnvVars.js
 npm run build || exit
 aws s3 sync ./build/ "$(cat bucketName.txt)"
+cd .. || exit
+echo Access Promptus at "$(cat distributionUrl.txt)"

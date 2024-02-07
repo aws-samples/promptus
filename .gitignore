@@ -6,6 +6,8 @@ node_modules
 
 build
 
+distributionUrl.txt
+
 lambda/dist
 frontend/.env
 frontend/bucketName.txt

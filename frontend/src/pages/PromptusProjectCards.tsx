@@ -54,7 +54,7 @@ function PromptusProjectCards() {
     async function loadData() {
         try {
             setLoading(true)
-            const response = await fetch(process.env.REACT_APP_API_URL + "/api/project", {
+            const response = await fetch(import.meta.env.VITE_API_URL + "/api/project", {
                 method: "GET",
                 headers: {
                     Authorization: session!.getIdToken().getJwtToken()
@@ -84,7 +84,7 @@ function PromptusProjectCards() {
             description: projectDescription,
             publicProject: projectPublic
         } as ProjectDto
-        fetch(process.env.REACT_APP_API_URL + "/api/project", {
+        fetch(import.meta.env.VITE_API_URL + "/api/project", {
             method: "POST",
             headers: {
                 Authorization: session!.getIdToken().getJwtToken()
