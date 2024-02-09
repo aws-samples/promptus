@@ -32,5 +32,6 @@ new PromptusApplicationStack(app, 'PromptusApplicationStack', {
     userPool: promptusAuthStack.userPool,
     certificate: promptusCertStack.certificate,
     crossRegionReferences: true,
+    description: 'AWS Promptus (uksb-1tupboc50)',
 });
 Aspects.of(app).add(new AwsSolutionsChecks({verbose: true}))
