@@ -40,7 +40,7 @@ configurable via CDK Context. Therefore, you have the following attributes which
     * You can use this property to allow domains for signup. If this is not an empty string there will be a PreSign Up
       Lambda configured for Amazon Cognito which checks if this is an allowed SignUp.
 * USE_SES_COGNITO="true|false"
-    * Set to true to create a SES identy and use this identity to send mails for signing up through Amazon Cognito.
+    * Set to true to create a SES identity and use this identity to send mails for signing up through Amazon Cognito.
 * DOMAIN="<DOMAIN_TO_USE>"
     * Specify the domain that should be used to access Promptus. Required if you set USE_CUSTOM_DOMAIN="true"
 * HOSTED_ZONE_ID="<HOSTED_ZONE_ID>"
