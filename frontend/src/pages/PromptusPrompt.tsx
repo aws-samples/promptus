@@ -28,7 +28,8 @@ import {
     Grid,
     Header,
     SelectProps,
-    SpaceBetween, Spinner,
+    SpaceBetween,
+    Spinner,
     SplitPanel,
     Tabs
 } from "@cloudscape-design/components";
@@ -36,11 +37,13 @@ import Breadcrumb from "../components/Breadcrumb";
 import {
     Ai21InferenceEntity,
     AnthropicInferenceEntity,
-    MetaInferenceEntity, PromptComment,
+    MetaInferenceEntity,
+    MistralInferenceEntity,
     PromptCommentEntity,
     PromptDetail,
     PromptDetailDto,
-    PromptDetailEntity, PromptusQDto,
+    PromptDetailEntity,
+    PromptusQDto,
     PromptusQEntity,
     TitanInferenceEntity
 } from "promptusCommon/Entities";
@@ -59,6 +62,7 @@ import TimeTravel from "../components/TimeTravel";
 import PromptCompare from "../components/PromptCompare";
 import PromptusQ from "../components/PromptusQ";
 import {BaseUtils} from "promptusCommon/BaseUtils";
+import MistralInference from "../components/inference/MistralInference";
 
 
 const COMMENT_SAVE_WORKING_MESSAGE = "Saving your comment";
@@ -298,7 +302,7 @@ function PromptusPrompt() {
                                     selectedOption={selectedModel}
                                     onChange={({detail}) => {
                                         setSelectedModel(detail.selectedOption)
-                                        const inference = BaseUtils.inferenceForModel(detail.selectedOption.value || "", promptDetail?.inference?.prompt || "")
+                                        const inference = BaseUtils.inferenceForModel(detail.selectedOption.value || "", BaseUtils.promptFromInference(promptDetail) || "")
                                         setPromptDetail({
                                             ...promptDetail,
                                             modelUsed: detail.selectedOption.value,
@@ -343,6 +347,14 @@ function PromptusPrompt() {
                                     })
                                 }}
                                                 titanInference={promptDetail?.inference as TitanInferenceEntity}></TitanInference>}
+                            {selectedModel.value?.startsWith("mistral") &&
+                                <MistralInference onChange={mistralInference => {
+                                    setPromptDetail({
+                                        ...promptDetail,
+                                        inference: mistralInference
+                                    })
+                                }}
+                                                  mistralInferenceEntity={promptDetail?.inference as MistralInferenceEntity}></MistralInference>}
                             {selectedModel.value === undefined &&
                                 <h2>Select a model to define a prompt</h2>
                             }

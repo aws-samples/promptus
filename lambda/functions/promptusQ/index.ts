@@ -65,10 +65,21 @@ async function getCurrentVersion(projectId: string, promptId: string) {
 
 async function invokePromptusQ(promputsAiEntity: PromptusQEntity) {
     let promptInput = {
-        modelUsed: "anthropic.claude-v2",
+        modelUsed: "anthropic.claude-3-sonnet-20240229-v1:0",
         inference: {
-            prompt: promptusAiPrompt.replace("##CURRENT_PROMPT##", promputsAiEntity.currentPrompt).replace("##PROMPT_DESCRIPTION##", promputsAiEntity.promptDescription).replace("##MODEL##", promputsAiEntity.model),
-            max_tokens_to_sample: 2048,
+            anthropic_version: "bedrock-2023-05-31",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: promptusAiPrompt.replace("##CURRENT_PROMPT##", promputsAiEntity.currentPrompt).replace("##PROMPT_DESCRIPTION##", promputsAiEntity.promptDescription).replace("##MODEL##", promputsAiEntity.model)
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 8192,
         } as AnthropicInferenceEntity
     };
     const promptDetail = await AwsUtils.executePrompt(bedrockRuntimeClient, promptInput)

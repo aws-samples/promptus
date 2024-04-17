@@ -95,12 +95,32 @@ export interface PromptDetailDto {
 }
 
 export class AnthropicInferenceEntity {
+    public messages: AnthropicMessageEntity[] = [new AnthropicMessageEntity()]
+    public temperature: number = 1
+    public top_p: number = 0.999
+    public top_k: number = 250
+    public max_tokens: number = 2000
+    public anthropic_version = "bedrock-2023-05-31"
+    public stop_sequences: string[] = ["\n\nHuman:"]
+}
+
+export class AnthropicMessageEntity {
+    public role: string = "user"
+    public content: AnthropicMessageContentEntity[] = [new AnthropicMessageContentEntity()]
+}
+
+export class AnthropicMessageContentEntity {
+    public text: string = ""
+    public type: string = "text"
+}
+
+export class MistralInferenceEntity {
     public prompt: string = ""
     public temperature: number = 0.5
-    public top_p: number = 1
-    public top_k: number = 250
-    public max_tokens_to_sample: number = 200
-    public stop_sequences: string[] = ["\n\nHuman:"]
+    public top_p: number = 0.9
+    public top_k: number = 200
+    public max_tokens: number = 512
+    public stop: string[] = []
 }
 
 export class TitanTextGenerationConfig {
@@ -137,7 +157,7 @@ export class Ai21Penalty {
     public scale: number = 0
 }
 
-export interface PromptusQEntity extends DynamoDbEntity{
+export interface PromptusQEntity extends DynamoDbEntity {
     currentPrompt: string
     promptDescription: string
     model: string

@@ -21,6 +21,7 @@ import {
     Ai21InferenceEntity,
     AnthropicInferenceEntity,
     MetaInferenceEntity,
+    MistralInferenceEntity,
     PromptDetail,
     TitanInferenceEntity
 } from "./Entities";
@@ -39,7 +40,7 @@ export class BaseUtils {
     static inferenceForModel(modelId: string, prompt: string) {
         if (modelId?.startsWith("anthropic")) {
             let anthropicInferenceEntity = new AnthropicInferenceEntity();
-            anthropicInferenceEntity.prompt = prompt
+            anthropicInferenceEntity.messages[0].content[0].text = prompt
             return anthropicInferenceEntity
         } else if (modelId?.startsWith("meta")) {
             let metaInferenceEntity = new MetaInferenceEntity();
@@ -53,6 +54,10 @@ export class BaseUtils {
             let titanInferenceEntity = new TitanInferenceEntity();
             titanInferenceEntity.inputText = prompt
             return titanInferenceEntity
+        } else if (modelId?.startsWith("mistral")) {
+            let mistralInferenceEntity = new MistralInferenceEntity();
+            mistralInferenceEntity.prompt = prompt
+            return mistralInferenceEntity
         } else {
             return null
         }
@@ -67,15 +72,18 @@ export class BaseUtils {
         return Math.round(text.length / 6)
     }
 
-    static promptFromInference(promptDetail: PromptDetail) {
+    static promptFromInference(promptDetail?: PromptDetail) {
+        if (!promptDetail) return undefined;
         if (promptDetail.modelUsed?.startsWith("anthropic")) {
-            return (promptDetail.inference as AnthropicInferenceEntity).prompt
+            return (promptDetail.inference as AnthropicInferenceEntity).messages[0].content[0].text
         } else if (promptDetail.modelUsed?.startsWith("amazon")) {
             return (promptDetail.inference as TitanInferenceEntity).inputText
         } else if (promptDetail.modelUsed?.startsWith("meta")) {
             return (promptDetail.inference as MetaInferenceEntity).prompt
         } else if (promptDetail.modelUsed?.startsWith("ai21")) {
             return (promptDetail.inference as Ai21InferenceEntity).prompt
+        } else if (promptDetail.modelUsed?.startsWith("mistral")) {
+            return (promptDetail.inference as MistralInferenceEntity).prompt
         } else {
             return undefined;
         }
@@ -83,13 +91,15 @@ export class BaseUtils {
 
     static setPromptToInference(promptDetail: PromptDetail, prompt: string) {
         if (promptDetail.modelUsed?.startsWith("anthropic")) {
-            (promptDetail.inference as AnthropicInferenceEntity).prompt = prompt
+            (promptDetail.inference as AnthropicInferenceEntity).messages[0].content[0].text = prompt
         } else if (promptDetail.modelUsed?.startsWith("amazon")) {
             (promptDetail.inference as TitanInferenceEntity).inputText = prompt
         } else if (promptDetail.modelUsed?.startsWith("meta")) {
             (promptDetail.inference as MetaInferenceEntity).prompt = prompt
         } else if (promptDetail.modelUsed?.startsWith("ai21")) {
             (promptDetail.inference as Ai21InferenceEntity).prompt = prompt
+        } else if (promptDetail.modelUsed?.startsWith("mistral")) {
+            (promptDetail.inference as MistralInferenceEntity).prompt = prompt
         }
         return promptDetail
     }

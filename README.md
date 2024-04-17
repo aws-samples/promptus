@@ -3,6 +3,7 @@
 ## 📋 Table of content
 
 - [Introduction](#introduction)
+- [Changelog](#changelog)
 - [Deployment](#deployment)
   - [Deployment without custom domain](#deploy-without-a-custom-domain)
   - [Deployment with a custom domain](#deploy-with-a-custom-domain)
@@ -28,6 +29,12 @@ Promptus allows you to easily create, iterate, and organize prompts for generati
 
 Whether you're an AI researcher, content creator, or business leader, Promptus gives you the power to unlock generative AI's full potential.
 
+## Changelog
+
+* ### 2024-04-17 - Version 1.1.0
+  * Added support for Anthropic Claude 3 model family
+  * Added support for Mistral model family
+  * Switched PromptusQ to Anthropic Claude 3 Sonnet model
 
 ## Deployment
 Promptus uses CDK for deployment. All the artifacts are being deployed in a single step. The deployment process is

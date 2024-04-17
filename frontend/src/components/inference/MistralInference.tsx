@@ -31,27 +31,27 @@ import {
     TokenGroupProps
 } from "@cloudscape-design/components";
 import React, {useState} from "react";
-import {AnthropicInferenceEntity} from "promptusCommon/Entities";
+import {MistralInferenceEntity} from "promptusCommon/Entities";
 
-{/* Component to display and edit AI inference parameters and handle requests to the Anthropic models*/
+{/*Component to display and edit AI inference parameters and handle requests to the Mistral models*/
 }
 
-interface AnthropicInferenceProps {
-    anthropicInference: AnthropicInferenceEntity
-    onChange: (anthropicInference: AnthropicInferenceEntity) => void
+interface MistralInferenceProps {
+    mistralInferenceEntity: MistralInferenceEntity
+    onChange: (mistralInferenceEntity: MistralInferenceEntity) => void
 }
 
-function AnthropicInference(props: AnthropicInferenceProps) {
+function MistralInference(props: MistralInferenceProps) {
 
     const [addStopSequenceVisible, setAddStopSequenceVisible] = useState(false)
     const [stopSequence, setStopSequence] = useState("")
 
-    const anthropicInference = props.anthropicInference;
+    const mistralInference = props.mistralInferenceEntity;
 
     function addStopSequence() {
-        const newStopSequence = anthropicInference.stop_sequences
+        const newStopSequence = mistralInference.stop
         newStopSequence.push(stopSequence)
-        anthropicInference.stop_sequences = newStopSequence
+        mistralInference.stop = newStopSequence
         hideAlert()
     }
 
@@ -68,13 +68,13 @@ function AnthropicInference(props: AnthropicInferenceProps) {
             <FormField stretch={true} label="Prompt">
                 <Textarea rows={5}
                           onChange={({detail}) => {
-                              anthropicInference.messages[0].content[0].text = detail.value
-                              props.onChange(anthropicInference)
+                              mistralInference.prompt = detail.value
+                              props.onChange(mistralInference)
                           }}
-                          value={anthropicInference.messages[0].content[0].text}
+                          value={mistralInference.prompt}
                 />
             </FormField>
-            <ExpandableSection headerText="Anthropic inference parameters">
+            <ExpandableSection headerText="Mistral inference parameters">
                 <Container>
                     <Grid
                         gridDefinition={[
@@ -83,49 +83,40 @@ function AnthropicInference(props: AnthropicInferenceProps) {
                             {colspan: {default: 12, xs: 6}},
                             {colspan: {default: 12, xs: 6}},
                             {colspan: {default: 12}},
-                            {colspan: {default: 12}},
                         ]}
                     >
                         <div>
                             <FormField label="Temperature">
                                 <Input onChange={event => {
-                                    anthropicInference.temperature = Number(event.detail.value)
-                                    props.onChange(anthropicInference)
-                                }} type={"number"} value={anthropicInference.temperature.toString()}></Input>
-                            </FormField>
-                        </div>
-                        <div>
-                            <FormField label="Top K">
-                                <Input onChange={event => {
-                                    anthropicInference.top_k = Number(event.detail.value)
-                                    props.onChange(anthropicInference)
-                                }} type={"number"} value={anthropicInference.top_k.toString()}></Input>
+                                    mistralInference.temperature = Number(event.detail.value)
+                                    props.onChange(mistralInference)
+                                }} type={"number"} value={mistralInference.temperature.toString()}></Input>
                             </FormField>
                         </div>
                         <div>
                             <FormField label="Top P">
                                 <Input onChange={event => {
-                                    anthropicInference.top_p = Number(event.detail.value)
-                                    props.onChange(anthropicInference)
-                                }} type={"number"} value={anthropicInference.top_p.toString()}></Input>
+                                    mistralInference.top_p = Number(event.detail.value)
+                                    props.onChange(mistralInference)
+                                }} type={"number"} value={mistralInference.top_p.toString()}></Input>
                             </FormField>
                         </div>
                         <div>
                             <FormField label="Max tokens to sample">
                                 <Input onChange={event => {
-                                    anthropicInference.max_tokens = Number(event.detail.value)
-                                    props.onChange(anthropicInference)
-                                }} type={"number"} value={anthropicInference.max_tokens.toString()}></Input>
+                                    mistralInference.max_tokens = Number(event.detail.value)
+                                    props.onChange(mistralInference)
+                                }} type={"number"} value={mistralInference.max_tokens.toString()}></Input>
                             </FormField>
                         </div>
                         <div>
                             <FormField label="Stop sequences">
                                 <TokenGroup onDismiss={event => {
-                                    const currentStopSequences = anthropicInference.stop_sequences
+                                    const currentStopSequences = mistralInference.stop
                                     currentStopSequences.splice(event.detail.itemIndex, 1)
-                                    anthropicInference.stop_sequences = currentStopSequences
-                                    props.onChange(anthropicInference)
-                                }} items={anthropicInference.stop_sequences.map(value => {
+                                    mistralInference.stop = currentStopSequences
+                                    props.onChange(mistralInference)
+                                }} items={mistralInference.stop.map(value => {
                                     return {label: value.replaceAll("\n", "\\n")} as TokenGroupProps.Item
                                 })}></TokenGroup>
                             </FormField>
@@ -167,4 +158,4 @@ function AnthropicInference(props: AnthropicInferenceProps) {
     )
 }
 
-export default AnthropicInference
+export default MistralInference

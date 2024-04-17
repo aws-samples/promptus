@@ -27,14 +27,12 @@ const bedrockClient = new BedrockClient({region: "us-east-1"});
 const client = new DynamoDBClient();
 const docClient = DynamoDBDocumentClient.from(client)
 
-const blockedModels = ["amazon.titan-embed-text-v1", "amazon.titan-embed-g1-text-02", "amazon.titan-image-generator-v1", "meta.llama2-13b-v1", "meta.llama2-70b-v1"] as string[]
-
 async function getAvailableModels() {
     const response = await bedrockClient.send(new ListFoundationModelsCommand({}))
     let models = [] as Model[];
     response.modelSummaries?.forEach(value => {
-        if (!value.modelId?.includes(":") && (value.modelId?.startsWith("anthropic") || value.modelId?.startsWith("meta") || value.modelId?.startsWith("ai21") || value.modelId?.startsWith("amazon"))) {
-            if (!blockedModels.includes(value.modelId)) {
+        if (value.modelId?.startsWith("anthropic") || value.modelId?.startsWith("meta") || value.modelId?.startsWith("mistral") || value.modelId?.startsWith("ai21") || value.modelId?.startsWith("amazon")) {
+            if (value.outputModalities?.includes("TEXT")) {
                 models.push({modelId: value.modelId!, modelName: value.modelName!})
             }
         }
@@ -120,7 +118,7 @@ const handler: APIGatewayProxyHandler = async (event) => {
                 return returnForbidden()
             }
         }
-        const [promptDetailsResponse, availableModels] = await Promise.all([docClient.send(getPromptDetailsQueryCommand),getAvailableModels()])
+        const [promptDetailsResponse, availableModels] = await Promise.all([docClient.send(getPromptDetailsQueryCommand), getAvailableModels()])
         let promptDetailDto = {} as PromptDetailDto
         promptDetailDto.promptEntity = promptResponse.Items![0] as PromptEntity
         promptDetailDto.promptDetailEntity = promptDetailsResponse.Items as PromptDetailEntity[]

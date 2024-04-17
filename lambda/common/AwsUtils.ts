@@ -21,7 +21,7 @@ import {DynamoDBDocumentClient, UpdateCommand} from "@aws-sdk/lib-dynamodb";
 import {
     Ai21InferenceEntity,
     AnthropicInferenceEntity,
-    MetaInferenceEntity,
+    MetaInferenceEntity, MistralInferenceEntity,
     PromptCommentEntity,
     PromptDetail, TitanInferenceEntity
 } from "promptusCommon/Entities";
@@ -103,17 +103,9 @@ export class AwsUtils {
 
     static async executePrompt(bedrockRuntimeClient: BedrockRuntimeClient, promptDetail: PromptDetail) {
         if (promptDetail.modelUsed?.startsWith("anthropic.")) {
-            let antrophicInference = promptDetail.inference as AnthropicInferenceEntity;
-            let prompt = antrophicInference.prompt || ""
-            if (!prompt.startsWith("Human:")) {
-                prompt = "Human: " + prompt
-            }
-            if (!prompt.trim().endsWith("Assistant:")) {
-                prompt = prompt + "\nAssistant:"
-            }
-            antrophicInference.prompt = prompt
-            promptDetail.inference = antrophicInference
-            await AwsUtils.invokeBedrockAndExtractResponse(bedrockRuntimeClient, promptDetail, antrophicInference, "completion");
+            await AwsUtils.invokeBedrock(bedrockRuntimeClient, promptDetail, promptDetail.inference as AnthropicInferenceEntity, response => {
+                return JSON.parse(response)["content"][0]["text"]
+            })
         } else if (promptDetail.modelUsed?.startsWith("meta")) {
             await AwsUtils.invokeBedrockAndExtractResponse(bedrockRuntimeClient, promptDetail, promptDetail.inference as MetaInferenceEntity, "generation")
         } else if (promptDetail.modelUsed?.startsWith("ai21")) {
@@ -124,12 +116,36 @@ export class AwsUtils {
             await AwsUtils.invokeBedrock(bedrockRuntimeClient, promptDetail, promptDetail.inference as TitanInferenceEntity, response => {
                 return JSON.parse(response)["results"][0]["outputText"]
             })
+        } else if (promptDetail.modelUsed?.startsWith("mistral")) {
+            let mistralInference = promptDetail.inference as MistralInferenceEntity;
+            // let prompt = mistralInference.prompt || ""
+            // if (!prompt.startsWith("<s>[INST]")) {
+            //     prompt = "<s>[INST] " + prompt
+            // }
+            // if (!prompt.trim().endsWith("[/INST]:")) {
+            //     prompt = prompt + "[/INST]"
+            // }
+            // mistralInference.prompt = prompt
+            await AwsUtils.invokeBedrock(bedrockRuntimeClient, promptDetail, mistralInference, response => {
+                return JSON.parse(response)["outputs"][0]["text"]
+            })
         } else {
             console.error("Not able to handle model " + promptDetail.modelUsed)
             throw new Error("The model " + promptDetail.modelUsed + " is currently not supported in Promptus")
         }
         return promptDetail
 
+    }
+
+    static returnForbidden() {
+        return {
+            statusCode: 401,
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+            body: "You're trying to access a private prompt"
+        };
     }
 
 }
