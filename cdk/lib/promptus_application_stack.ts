@@ -33,7 +33,7 @@ import {Construct} from "constructs";
 import {ManagedPolicy} from "aws-cdk-lib/aws-iam";
 import {AssetCode, LayerVersion, Runtime} from "aws-cdk-lib/aws-lambda";
 import * as s3 from "aws-cdk-lib/aws-s3";
-import {Bucket} from "aws-cdk-lib/aws-s3";
+import {Bucket, IBucket} from "aws-cdk-lib/aws-s3";
 import * as path from "path";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
 import {SecurityPolicyProtocol, SSLMethod} from "aws-cdk-lib/aws-cloudfront"
@@ -63,8 +63,8 @@ export class PromptusApplicationStack extends cdk.Stack {
         });
         let layer = this.createLambdaLayer()
         this.createDynamoDbTable()
-        let restApi = this.createRestApi(layer)
         let bucket = this.createStaticResourcesBucket()
+        let restApi = this.createRestApi(layer, bucket)
         let cloudFrontWebDistribution = this.createCloudFrontDistribution(bucket, restApi, props.certificate)
         if (this.node.tryGetContext('USE_CUSTOM_DOMAIN') === "true") {
             let hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, "HostedZone", {
@@ -103,7 +103,7 @@ export class PromptusApplicationStack extends cdk.Stack {
                 id: 'AwsSolutions-IAM5',
                 appliesTo: ["Resource::<promptusDataC67F692A.Arn>/index/*"],
                 reason: 'Using addGrantWrite/Read for Lambda access to DynamoDB. Automatically added for Index usage.'
-            },{
+            }, {
                 id: 'AwsSolutions-IAM4',
                 appliesTo: ["Policy::arn:<AWS::Partition>:iam::aws:policy/AmazonBedrockFullAccess"],
                 reason: 'Application needs full access to Amazon Bedrock.'
@@ -161,7 +161,17 @@ export class PromptusApplicationStack extends cdk.Stack {
                 id: 'AwsSolutions-IAM5',
                 appliesTo: ["Resource::*"],
                 reason: 'Using standard construct for creating a Function in CDK. This adds a DefaultPolicy which includes Resource::*.'
-            }
+            },
+            {
+                id: 'AwsSolutions-IAM5',
+                appliesTo: ["Action::s3:Abort*"],
+                reason: 'Using standard construct for giving S3 Put permission to a Function in CDK.'
+            },
+            {
+                id: 'AwsSolutions-IAM5',
+                appliesTo: ["Resource::<staticBucket49CE0992.Arn>/*"],
+                reason: 'Using standard construct for giving S3 Put permission to a Function in CDK.'
+            },
         ])
         NagSuppressions.addResourceSuppressionsByPath(this, "/PromptusApplicationStack/promptusQ/ServiceRole/DefaultPolicy/Resource", [
             {
@@ -325,7 +335,7 @@ export class PromptusApplicationStack extends cdk.Stack {
         })
     }
 
-    private createRestApi(layer: LayerVersion) {
+    private createRestApi(layer: LayerVersion, bucket: IBucket) {
         let restApi = new agw.RestApi(this, "promptusRestApi", {
             deployOptions: {
                 stageName: "api",
@@ -343,11 +353,11 @@ export class PromptusApplicationStack extends cdk.Stack {
             },
             cloudWatchRole: true
         });
-        this.createApiResources(restApi.root, layer);
+        this.createApiResources(restApi.root, layer, bucket);
         return restApi;
     }
 
-    private createApiResources(rootResource: IResource, layer: LayerVersion) {
+    private createApiResources(rootResource: IResource, layer: LayerVersion, bucket: IBucket) {
         const bedrockAccessPolicy = ManagedPolicy.fromAwsManagedPolicyName("AmazonBedrockFullAccess")
         let apiResource = rootResource.addResource("api");
         const project = apiResource.addResource("project");
@@ -396,8 +406,10 @@ export class PromptusApplicationStack extends cdk.Stack {
             authorizationType: agw.AuthorizationType.COGNITO,
         })
         let executePrompt = createApiLambda(this, "executePrompt", layer, {
-            DYNAMO_TABLE: this.promptusDynamoTable.tableName
+            DYNAMO_TABLE: this.promptusDynamoTable.tableName,
+            BUCKET: bucket.bucketName
         }, undefined, [bedrockAccessPolicy], 30);
+        bucket.grantPut(executePrompt)
         this.promptusDynamoTable.grantReadData(executePrompt)
         this.promptusDynamoTable.grantWriteData(executePrompt)
         projectPromptDetail.addMethod("POST", new agw.LambdaIntegration(executePrompt), {

@@ -21,12 +21,21 @@ import {DynamoDBDocumentClient, UpdateCommand} from "@aws-sdk/lib-dynamodb";
 import {
     Ai21InferenceEntity,
     AnthropicInferenceEntity,
-    MetaInferenceEntity, MistralInferenceEntity,
+    MetaInferenceEntity,
+    MistralInferenceEntity,
     PromptCommentEntity,
-    PromptDetail, TitanInferenceEntity
+    PromptDetail,
+    StabilityInferenceEntity,
+    TitanImageInferenceEntity,
+    TitanInferenceEntity
 } from "promptusCommon/Entities";
 import {APIGatewayProxyCognitoAuthorizer} from "aws-lambda";
 import {BedrockRuntimeClient, InvokeModelCommand} from "@aws-sdk/client-bedrock-runtime";
+import {PutObjectCommand, PutObjectCommandOutput, S3Client} from "@aws-sdk/client-s3";
+import process from "process";
+import {v4 as uuidV4} from "uuid"
+
+const s3Client = new S3Client()
 
 export class AwsUtils {
 
@@ -101,6 +110,20 @@ export class AwsUtils {
         promptDetail.answerParsed = responseExtractor(promptDetail.answerRaw)
     }
 
+    private static async invokeBedrockForImage(bedrockRuntimeClient: BedrockRuntimeClient, promptDetail: PromptDetail, inference: any, responseExtractor: (response: string) => Promise<string>, rawResponseExtractor: (response: string) => string) {
+        let invokeModelCommand = new InvokeModelCommand({
+            modelId: promptDetail.modelUsed,
+            body: JSON.stringify(inference),
+            accept: "application/json",
+            contentType: "application/json"
+        });
+        console.log("Inference:" + JSON.stringify(invokeModelCommand))
+        let bedrockResponse = await bedrockRuntimeClient.send(invokeModelCommand)
+        promptDetail.answerRaw = rawResponseExtractor(bedrockResponse.body.transformToString())
+        promptDetail.answerParsed = await responseExtractor(bedrockResponse.body.transformToString())
+        promptDetail.isImage = true
+    }
+
     static async executePrompt(bedrockRuntimeClient: BedrockRuntimeClient, promptDetail: PromptDetail) {
         if (promptDetail.modelUsed?.startsWith("anthropic.")) {
             await AwsUtils.invokeBedrock(bedrockRuntimeClient, promptDetail, promptDetail.inference as AnthropicInferenceEntity, response => {
@@ -113,21 +136,89 @@ export class AwsUtils {
                 return JSON.parse(response)["completions"][0]["data"]["text"]
             })
         } else if (promptDetail.modelUsed?.startsWith("amazon")) {
-            await AwsUtils.invokeBedrock(bedrockRuntimeClient, promptDetail, promptDetail.inference as TitanInferenceEntity, response => {
-                return JSON.parse(response)["results"][0]["outputText"]
-            })
+            if (promptDetail.modelUsed?.includes("image")) {
+                let inference = promptDetail.inference as TitanImageInferenceEntity
+                if (inference.textToImageParams.negativeText === "") {
+                    inference.textToImageParams.negativeText = undefined
+                }
+                await AwsUtils.invokeBedrockForImage(bedrockRuntimeClient, promptDetail, inference, async response => {
+                    const bedrockResponseBody = JSON.parse(response) as {
+                        images: string[]
+                    }
+                    const generatedImageKeys = [] as string[]
+                    const promises = [] as Promise<PutObjectCommandOutput>[]
+                    bedrockResponseBody.images.forEach(image => {
+                        const imageKey = "generatedImages/" + uuidV4() + ".jpg";
+                        generatedImageKeys.push(imageKey)
+                        promises.push(s3Client.send(new PutObjectCommand(
+                            {
+                                Bucket: process.env.BUCKET,
+                                Key: imageKey,
+                                Body: Buffer.from(image, "base64")
+                            }
+                        )))
+                    })
+                    await Promise.all(promises)
+                    return generatedImageKeys.join("#")
+                }, response => {
+                    const bedrockResponseBody = JSON.parse(response) as {
+                        images: string[],
+                        error: string
+                    }
+                    for (let i = 0; i < bedrockResponseBody.images.length; i++) {
+                        bedrockResponseBody.images[i] = ""
+                    }
+                    return JSON.stringify(bedrockResponseBody)
+                })
+            } else {
+                await AwsUtils.invokeBedrock(bedrockRuntimeClient, promptDetail, promptDetail.inference as TitanInferenceEntity, response => {
+                    return JSON.parse(response)["results"][0]["outputText"]
+                })
+            }
         } else if (promptDetail.modelUsed?.startsWith("mistral")) {
             let mistralInference = promptDetail.inference as MistralInferenceEntity;
-            // let prompt = mistralInference.prompt || ""
-            // if (!prompt.startsWith("<s>[INST]")) {
-            //     prompt = "<s>[INST] " + prompt
-            // }
-            // if (!prompt.trim().endsWith("[/INST]:")) {
-            //     prompt = prompt + "[/INST]"
-            // }
-            // mistralInference.prompt = prompt
             await AwsUtils.invokeBedrock(bedrockRuntimeClient, promptDetail, mistralInference, response => {
                 return JSON.parse(response)["outputs"][0]["text"]
+            })
+        } else if (promptDetail.modelUsed?.startsWith("stability")) {
+            let inference = promptDetail.inference as StabilityInferenceEntity;
+            await AwsUtils.invokeBedrockForImage(bedrockRuntimeClient, promptDetail, inference, async response => {
+                const bedrockResponseBody = JSON.parse(response) as {
+                    result: string,
+                    artifacts: {
+                        seed: number
+                        base64: string
+                        finishReason: string
+                    }[]
+                }
+                const generatedImageKeys = [] as string[]
+                const promises = [] as Promise<PutObjectCommandOutput>[]
+                bedrockResponseBody.artifacts.forEach(artfifact => {
+                    const imageKey = "generatedImages/" + uuidV4() + ".jpg";
+                    generatedImageKeys.push(imageKey)
+                    promises.push(s3Client.send(new PutObjectCommand(
+                        {
+                            Bucket: process.env.BUCKET,
+                            Key: imageKey,
+                            Body: Buffer.from(artfifact.base64, "base64")
+                        }
+                    )))
+                })
+                await Promise.all(promises)
+                return generatedImageKeys.join("#")
+            }, response => {
+                const bedrockResponseBody = JSON.parse(response) as {
+                    result: string,
+                    artifacts: {
+                        seed: number
+                        base64: string
+                        finishReason: string
+                    }[]
+                }
+                for (let i = 0; i < bedrockResponseBody.artifacts.length; i++) {
+                    bedrockResponseBody.artifacts[i].base64 = ""
+                }
+                return JSON.stringify(bedrockResponseBody)
             })
         } else {
             console.error("Not able to handle model " + promptDetail.modelUsed)

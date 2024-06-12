@@ -31,10 +31,8 @@ async function getAvailableModels() {
     const response = await bedrockClient.send(new ListFoundationModelsCommand({}))
     let models = [] as Model[];
     response.modelSummaries?.forEach(value => {
-        if (value.modelId?.startsWith("anthropic") || value.modelId?.startsWith("meta") || value.modelId?.startsWith("mistral") || value.modelId?.startsWith("ai21") || value.modelId?.startsWith("amazon")) {
-            if (value.outputModalities?.includes("TEXT")) {
-                models.push({modelId: value.modelId!, modelName: value.modelName!})
-            }
+        if (!value.modelId?.endsWith("k") && (value.outputModalities?.includes("TEXT") || value.outputModalities?.includes("IMAGE")) && value.inferenceTypesSupported?.includes("ON_DEMAND")) {
+            models.push({modelId: value.modelId!, modelName: value.modelName!})
         }
     })
     return models

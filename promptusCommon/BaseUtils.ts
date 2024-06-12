@@ -22,7 +22,7 @@ import {
     AnthropicInferenceEntity,
     MetaInferenceEntity,
     MistralInferenceEntity,
-    PromptDetail,
+    PromptDetail, StabilityInferenceEntity, TitanImageInferenceEntity,
     TitanInferenceEntity
 } from "./Entities";
 
@@ -51,13 +51,23 @@ export class BaseUtils {
             ai21InferenceEntity.prompt = prompt
             return ai21InferenceEntity
         } else if (modelId?.startsWith("amazon")) {
-            let titanInferenceEntity = new TitanInferenceEntity();
-            titanInferenceEntity.inputText = prompt
-            return titanInferenceEntity
+            if (modelId.includes("image")) {
+                let titanImageInferenceEntity = new TitanImageInferenceEntity();
+                titanImageInferenceEntity.textToImageParams.text = prompt
+                return titanImageInferenceEntity
+            } else {
+                let titanInferenceEntity = new TitanInferenceEntity();
+                titanInferenceEntity.inputText = prompt
+                return titanInferenceEntity
+            }
         } else if (modelId?.startsWith("mistral")) {
             let mistralInferenceEntity = new MistralInferenceEntity();
             mistralInferenceEntity.prompt = prompt
             return mistralInferenceEntity
+        } else if (modelId?.startsWith("stability")) {
+            let stabilityInferenceEntity = new StabilityInferenceEntity();
+            stabilityInferenceEntity.text_prompts[0].text = prompt
+            return stabilityInferenceEntity
         } else {
             return null
         }
@@ -77,13 +87,19 @@ export class BaseUtils {
         if (promptDetail.modelUsed?.startsWith("anthropic")) {
             return (promptDetail.inference as AnthropicInferenceEntity).messages[0].content[0].text
         } else if (promptDetail.modelUsed?.startsWith("amazon")) {
-            return (promptDetail.inference as TitanInferenceEntity).inputText
+            if (promptDetail.modelUsed?.includes("image")) {
+                return (promptDetail.inference as TitanImageInferenceEntity).textToImageParams.text
+            } else {
+                return (promptDetail.inference as TitanInferenceEntity).inputText
+            }
         } else if (promptDetail.modelUsed?.startsWith("meta")) {
             return (promptDetail.inference as MetaInferenceEntity).prompt
         } else if (promptDetail.modelUsed?.startsWith("ai21")) {
             return (promptDetail.inference as Ai21InferenceEntity).prompt
         } else if (promptDetail.modelUsed?.startsWith("mistral")) {
             return (promptDetail.inference as MistralInferenceEntity).prompt
+        } else if (promptDetail.modelUsed?.startsWith("stability")) {
+            return (promptDetail.inference as StabilityInferenceEntity).text_prompts[0].text
         } else {
             return undefined;
         }
@@ -93,13 +109,19 @@ export class BaseUtils {
         if (promptDetail.modelUsed?.startsWith("anthropic")) {
             (promptDetail.inference as AnthropicInferenceEntity).messages[0].content[0].text = prompt
         } else if (promptDetail.modelUsed?.startsWith("amazon")) {
-            (promptDetail.inference as TitanInferenceEntity).inputText = prompt
+            if (promptDetail.modelUsed?.includes("image")) {
+                (promptDetail.inference as TitanImageInferenceEntity).textToImageParams.text = prompt
+            } else {
+                (promptDetail.inference as TitanInferenceEntity).inputText = prompt
+            }
         } else if (promptDetail.modelUsed?.startsWith("meta")) {
             (promptDetail.inference as MetaInferenceEntity).prompt = prompt
         } else if (promptDetail.modelUsed?.startsWith("ai21")) {
             (promptDetail.inference as Ai21InferenceEntity).prompt = prompt
         } else if (promptDetail.modelUsed?.startsWith("mistral")) {
             (promptDetail.inference as MistralInferenceEntity).prompt = prompt
+        } else if (promptDetail.modelUsed?.startsWith("stability")) {
+            (promptDetail.inference as StabilityInferenceEntity).text_prompts[0].text = prompt
         }
         return promptDetail
     }

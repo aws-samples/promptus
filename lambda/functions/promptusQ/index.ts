@@ -80,7 +80,8 @@ async function invokePromptusQ(promputsAiEntity: PromptusQEntity) {
                 }
             ],
             max_tokens: 8192,
-        } as AnthropicInferenceEntity
+        } as AnthropicInferenceEntity,
+        isImage: false
     };
     const promptDetail = await AwsUtils.executePrompt(bedrockRuntimeClient, promptInput)
     const match = promptDetail.answerParsed!.match(/<promptusQ>([^<]*)<\/promptusQ>/)
