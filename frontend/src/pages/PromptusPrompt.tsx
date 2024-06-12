@@ -44,7 +44,7 @@ import {
     PromptDetailDto,
     PromptDetailEntity,
     PromptusQDto,
-    PromptusQEntity,
+    PromptusQEntity, StabilityInferenceEntity, TitanImageInferenceEntity,
     TitanInferenceEntity
 } from "promptusCommon/Entities";
 import {useParams} from "react-router-dom";
@@ -63,6 +63,9 @@ import PromptCompare from "../components/PromptCompare";
 import PromptusQ from "../components/PromptusQ";
 import {BaseUtils} from "promptusCommon/BaseUtils";
 import MistralInference from "../components/inference/MistralInference";
+import TitanImageInference from "../components/inference/TitanImageInference";
+import {Label} from "@cloudscape-design/components/internal/components/option/option-parts";
+import StabilityImageInference from "../components/inference/StabilityImageInference";
 
 
 const COMMENT_SAVE_WORKING_MESSAGE = "Saving your comment";
@@ -75,7 +78,7 @@ function PromptusPrompt() {
     const [timeTravelVisible, setTimeTravelVisible] = useState(true)
     let {promptusProjectId, promptusPromptId} = useParams();
     const [promptDetailDto, setPromptDetailDto] = useState<PromptDetailDto>()
-    const [promptDetail, setPromptDetail] = useState<PromptDetail>()
+    const [promptDetail, setPromptDetail] = useState<PromptDetail>({isImage: false})
     const [errorMessage, setErrorMessage] = useState("")
     const [modelOptions, setModelOptions] = useState<SelectProps.Option[]>([])
     const [selectedModel, setSelectedModel] = useState<SelectProps.Option>({})
@@ -207,7 +210,7 @@ function PromptusPrompt() {
     function selectedVersionChanged(index: number) {
         setSelectedVersion(versionSelectOptions[index])
         let promptDetail = promptDetailDto?.promptDetailEntity[index].promptDetail;
-        setPromptDetail(promptDetail)
+        setPromptDetail(promptDetail!)
         modelOptions.forEach(value => {
             if (value.value === promptDetail?.modelUsed) {
                 setSelectedModel(value)
@@ -282,6 +285,7 @@ function PromptusPrompt() {
                             {colspan: {default: 6}},
                             {colspan: {default: 6}},
                             {colspan: {default: 12}},
+                            {colspan: {default: 12}},
                         ]}
                     >
                         <div>
@@ -339,7 +343,7 @@ function PromptusPrompt() {
                                     })
                                 }}
                                                metaInference={promptDetail?.inference as MetaInferenceEntity}></MetaInference>}
-                            {selectedModel.value?.startsWith("amazon") &&
+                            {selectedModel.value?.startsWith("amazon") && !selectedModel.value.includes("image") &&
                                 <TitanInference onChange={titanInference => {
                                     setPromptDetail({
                                         ...promptDetail,
@@ -347,6 +351,15 @@ function PromptusPrompt() {
                                     })
                                 }}
                                                 titanInference={promptDetail?.inference as TitanInferenceEntity}></TitanInference>}
+                            {selectedModel.value?.startsWith("amazon") && selectedModel.value.includes("image") &&
+                                <TitanImageInference onChange={titanInference => {
+                                    setPromptDetail({
+                                        ...promptDetail,
+                                        inference: titanInference,
+                                        isImage: true
+                                    })
+                                }}
+                                                     titanInference={promptDetail?.inference as TitanImageInferenceEntity}></TitanImageInference>}
                             {selectedModel.value?.startsWith("mistral") &&
                                 <MistralInference onChange={mistralInference => {
                                     setPromptDetail({
@@ -355,6 +368,14 @@ function PromptusPrompt() {
                                     })
                                 }}
                                                   mistralInferenceEntity={promptDetail?.inference as MistralInferenceEntity}></MistralInference>}
+                            {selectedModel.value?.startsWith("stability") &&
+                                <StabilityImageInference onChange={stabilityInference => {
+                                    setPromptDetail({
+                                        ...promptDetail,
+                                        inference: stabilityInference
+                                    })
+                                }}
+                                                         stabilityInferenceEntity={promptDetail?.inference as StabilityInferenceEntity}></StabilityImageInference>}
                             {selectedModel.value === undefined &&
                                 <h2>Select a model to define a prompt</h2>
                             }
@@ -366,26 +387,42 @@ function PromptusPrompt() {
                             <h3>Output tokens: {calculateOutputTokens()}</h3>
                         </div>
                         <div>
-                            <Tabs
-                                tabs={[
-                                    {
-                                        label: "Parsed response",
-                                        id: "parsedResponse",
-                                        content:
-                                            <LoadingTextarea disabled={true} loading={loading} rows={10}
-                                                             value={promptDetail?.answerParsed || ""}
-                                            />
-                                    },
-                                    {
-                                        label: "Response raw",
-                                        id: "rawResponse",
-                                        content:
-                                            <LoadingJsonView loading={loading}
-                                                             value={promptDetail?.answerRaw}/>
+                            {!promptDetail.isImage ?
+                                <Tabs
+                                    tabs={[
+                                        {
+                                            label: "Parsed response",
+                                            id: "parsedResponse",
+                                            content:
+                                                <LoadingTextarea disabled={true} loading={loading} rows={10}
+                                                                 value={promptDetail?.answerParsed || ""}
+                                                />
+                                        },
+                                        {
+                                            label: "Response raw",
+                                            id: "rawResponse",
+                                            content:
+                                                <LoadingJsonView loading={loading}
+                                                                 value={promptDetail?.answerRaw}/>
 
-                                    }
-                                ]}
-                            />
+                                        }
+                                    ]}
+                                /> :
+                                <>
+                                    <FormField label="Image responses" stretch={true}>
+                                        <SpaceBetween size={"m"} direction="vertical" alignItems={"center"}>
+
+                                            {promptDetail.answerParsed?.split("#").map(imageUrl => {
+                                                return <img id={imageUrl} width={"100%"}
+                                                            alt={"Image generated by Bedrock using prompt: " + BaseUtils.promptFromInference(promptDetail)}
+                                                            src={import.meta.env.VITE_API_URL + "/" + imageUrl}></img>
+                                            })
+                                            }
+                                        </SpaceBetween>
+                                    </FormField>
+                                </>}
+                        </div>
+                        <div>
                             <SpaceBetween size={"s"} direction={"horizontal"}>
                                 <Button variant={"primary"}
                                         disabled={workingMessage === EXECUTING_PROMPT_WORKING_MESSAGE}
@@ -396,17 +433,18 @@ function PromptusPrompt() {
                                         onClick={event => setPromptusQVisible(true)} iconName="suggestions">Promptus
                                     Q</Button>
                                 {!timeTravelVisible &&
-                                    <Button variant={"link"} onClick={event => setTimeTravelVisible(true)}
+                                    <Button variant={"link"} onClick={() => setTimeTravelVisible(true)}
                                             iconName="calendar">Show time
                                         travel</Button>}
                                 {timeTravelVisible &&
-                                    <Button variant={"link"} onClick={event => setTimeTravelVisible(false)}
+                                    <Button variant={"link"} onClick={() => setTimeTravelVisible(false)}
                                             iconName="close">Hide time
                                         travel</Button>}
                             </SpaceBetween>
                         </div>
                     </Grid>
-                    <PromptusQ working={workingMessage === PROMPTUSQ_WORKING_MESSAGE} visible={promptusQVisible}
+                    <PromptusQ working={workingMessage === PROMPTUSQ_WORKING_MESSAGE}
+                               visible={promptusQVisible}
                                onDismiss={() => {
                                    setOptimizedPrompt("")
                                    setPromptusQVisible(false)

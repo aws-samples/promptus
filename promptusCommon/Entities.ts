@@ -72,6 +72,7 @@ export interface PromptDetail {
     answerRaw?: string
     answerParsed?: string
     inference?: any
+    isImage: boolean
 }
 
 export interface ModelSkeleton {
@@ -128,6 +129,36 @@ export class TitanTextGenerationConfig {
     public topP: number = 1
     public maxTokenCount: number = 512
     public stopSequences: string[] = []
+}
+
+export class TitanImageGenerationConfig {
+    public cfgScale: number = 8
+    public seed: number = 0
+    public quality: string = "standard"
+    public width: number = 1024
+    public height: number = 1024
+    public numberOfImages: number = 1
+}
+
+export class StabilityInferenceEntity {
+    public cfg_scale: number = 10
+    public seed: number = 0
+    public steps: number = 50
+    public width: number = 1024
+    public height: number = 1024
+    public text_prompts: {
+        text: string
+        weight: number
+    }[] = [{text: "", weight: 1}]
+}
+
+export class TitanImageInferenceEntity {
+    public imageGenerationConfig: TitanImageGenerationConfig = new TitanImageGenerationConfig()
+    public taskType: string = "TEXT_IMAGE"
+    public textToImageParams: {
+        text: string
+        negativeText?: string
+    } = {text: ""}
 }
 
 export class TitanInferenceEntity {
